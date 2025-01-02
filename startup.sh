@@ -69,7 +69,6 @@ fi
 
 # Apply configurations on initial startup
 if [ ! -f /init ]; then
-
   #restore previous backup if exists
   VER="15.0"
   if [ "$ENABLE_AUTO_RESTORE" == "true" ] && [ -f /backup/$VER/new.tar.gz ]; then

@@ -1,5 +1,5 @@
 #!/bin/bash
-VER="15.0"
+VER="17.0"
 while /bin/true; do
   echo "Waiting $BACKUP_TIMER seconds for the next automatic backup..."
   sleep $BACKUP_TIMER
