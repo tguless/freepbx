@@ -11,11 +11,15 @@ fi
 
 chown -R asterisk:asterisk /backup
 
-
-
-
 #Fail2Ban
 if [ "$FAIL2BAN_ENABLE" == "true" ]; then
+  #if [ -f /var/run/fail2ban/fail2ban.sock ]; then
+  #   rm /var/run/fail2ban/fail2ban.sock
+  #fi 
+
+  if [ -e /var/run/fail2ban ]; then
+    rm -r /var/run/fail2ban
+  fi
   set +e
   mkdir /var/run/fail2ban
   iptables-legacy -L
@@ -33,18 +37,13 @@ if [ "$FAIL2BAN_ENABLE" == "true" ]; then
   fail2ban-server
 fi
 
-
-
-
 echo "Starting MySQL..."
-/etc/init.d/mysql start
+/etc/init.d/mariadb start
 status=$?
 if [ $status -ne 0 ]; then
   echo "Failed to start mysql: $status"
   exit $status
 fi
-
-
 
 echo "Starting Apache..."
 if [ -f /etc/asterisk/keys/$CERTIFICATE_DOMAIN.pem ]; then
@@ -60,9 +59,6 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
-
-
-
 echo "Starting FreePBX..."
 fwconsole start
 status=$?
@@ -70,9 +66,6 @@ if [ $status -ne 0 ]; then
   echo "Failed to start fwconsole: $status"
   exit $status
 fi
-
-
-
 
 # Apply configurations on initial startup
 if [ ! -f /init ]; then
@@ -94,9 +87,6 @@ if [ ! -f /init ]; then
   touch /init
 fi
 
-
-
-
 echo "Starting automatic backups..."
 /backup.sh &
 status=$?
@@ -104,9 +94,6 @@ if [ $status -ne 0 ]; then
   echo "Failed to start backup.sh: $status"
   exit $status
 fi
-
-
-
 
 if [ "$ENABLE_DELETE_OLD_RECORDINGS" == "true" ]; then
   echo "Starting automatic deletion of old recordings..."
@@ -118,19 +105,13 @@ if [ "$ENABLE_DELETE_OLD_RECORDINGS" == "true" ]; then
   fi
 fi
 
-
-
-
 if [ "$MARIADB_REMOTE_ROOT_PASSWORD" != "" ]; then
   echo "Enabling remote access to MySQL. Be aware."
   QUERY="GRANT ALL ON *.* TO 'root'@'%' IDENTIFIED BY '$MARIADB_REMOTE_ROOT_PASSWORD' WITH GRANT OPTION; FLUSH PRIVILEGES;"
   mysql -u root -e "$QUERY"
 fi
 
-
-
 echo "STARTUP COMPLETED"
-
 
 #Check if all processes are OK
 while /bin/true; do

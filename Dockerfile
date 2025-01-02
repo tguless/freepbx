@@ -88,7 +88,7 @@ RUN /etc/init.d/mariadb start && \
     ./start_asterisk start && \
     sleep 10 && \
     echo "Installing FreePBX..." && \
-    ./install -n && \
+    #./install -n && \
     #cd /tmp && \
     #wget https://github.com/FreePBX/sng_freepbx_debian_install/raw/master/sng_freepbx_debian_install.sh  -O /tmp/sng_freepbx_debian_install.sh && \
     #bash /tmp/sng_freepbx_debian_install.sh && \
@@ -98,12 +98,12 @@ RUN /etc/init.d/mariadb start && \
     #fwconsole ma downloadinstall bulkhandler ringgroups timeconditions ivr restapi cel configedit asteriskinfo certman ucp webrtc  && \
     # fwconsole ma upgradeall && \
     # mysqldump -uroot -d -A -B --skip-add-drop-table > /mysql-freepbx.sql && \
-    /etc/init.d/mysql stop && \
+    /etc/init.d/mariadb stop && \
     gpg --refresh-keys --keyserver hkp://keyserver.ubuntu.com:80 && \
-    gpg --import /var/www/html/admin/libraries/BMO/9F9169F4B33B4659.key && \
-    gpg --import /var/www/html/admin/libraries/BMO/3DDB2122FE6D84F7.key && \
-    gpg --import /var/www/html/admin/libraries/BMO/86CE877469D2EAD9.key && \
-    gpg --import /var/www/html/admin/libraries/BMO/1588A7366BD35B34.key && \
+    #gpg --import /var/www/html/admin/libraries/BMO/9F9169F4B33B4659.key && \
+    #gpg --import /var/www/html/admin/libraries/BMO/3DDB2122FE6D84F7.key && \
+    #gpg --import /var/www/html/admin/libraries/BMO/86CE877469D2EAD9.key && \
+    #gpg --import /var/www/html/admin/libraries/BMO/1588A7366BD35B34.key && \
     chown asterisk:asterisk -R /var/www/html && \
     sed -i 's/www-data/asterisk/g' /etc/apache2/envvars && \
     rm -rf /usr/src/freepbx*
@@ -115,12 +115,14 @@ ADD jail.local /etc/fail2ban/
 RUN rm /etc/fail2ban/jail.d/defaults-debian.conf
 
 # Optional tools
-RUN apt-get install --no-install-recommends -y tcpdump tcpflow whois sipsak sngrep
+RUN apt-get install --no-install-recommends -y tcpdump tcpflow whois sipsak sngrep iptables
 
 # Cleanup
 RUN apt-get clean && \
     apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    #mkdir /var/log/asterisk/ && \
+    touch /var/log/asterisk/full
 
 ADD startup.sh /
 ADD apply-initial-configs.sh /
