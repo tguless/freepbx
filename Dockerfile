@@ -92,17 +92,17 @@ RUN /etc/init.d/mariadb start && \
     cp /etc/odbc.ini /usr/src/freepbx/installlib/files/odbc.ini && \
     ./start_asterisk start && \
     echo "Installing FreePBX (first attempt)..." && \
-    sleep 30 && \
+    # sleep 10 && \
     cd /usr/src/freepbx && \
-    ./install -n && \
+    ./install -n || true && \
     echo "Updating FreePBX modules..." && \
     fwconsole chown && \
     echo "Installing backup module..." && \
-    fwconsole ma downloadinstall backup && \
+    fwconsole ma downloadinstall backup  || true && \
     echo "Installing other modules..." && \
-    fwconsole ma downloadinstall bulkhandler ringgroups timeconditions ivr restapi cel configedit asteriskinfo certman ucp webrtc && \
+    fwconsole ma downloadinstall bulkhandler ringgroups timeconditions ivr restapi cel configedit asteriskinfo certman ucp webrtc  || true  && \
     echo "Running upgrade all..." && \
-    fwconsole ma upgradeall && \
+    fwconsole ma upgradeall  || true  && \
     # mysqldump -uroot -d -A -B --skip-add-drop-table > /mysql-freepbx.sql && \
     /etc/init.d/mariadb stop && \
     gpg --refresh-keys --keyserver hkp://keyserver.ubuntu.com:80 && \
@@ -122,7 +122,6 @@ RUN rm /etc/fail2ban/jail.d/defaults-debian.conf
 
 # Optional tools
 RUN apt-get install --no-install-recommends -y tcpdump tcpflow whois sipsak sngrep iptables
-
 
 
 # Cleanup
