@@ -40,7 +40,9 @@ sed -i 's/"externip": "186.195.33.54"/"externip": "'$SIP_NAT_IP'"/' Sipsettings.
 echo "Assembling updated backup archive..."
 
 cd /tmp/basic-config
-rm -r /tmp/modulejson
+if [ -e /tmp/modulejson ] ; then
+  rm -r /tmp/modulejson
+fi
 mv modulejson /tmp/
 mkdir modulejson
 mv /tmp/modulejson/Framework.json modulejson/
