@@ -86,17 +86,17 @@ RUN /etc/init.d/mariadb start && \
     echo "Starting Asterisk..." && \
     cp /etc/odbc.ini /usr/src/freepbx/installlib/files/odbc.ini && \
     ./start_asterisk start && \
-    sleep 10 && \
-    echo "Installing FreePBX..." && \
-    #./install -n && \
-    #cd /tmp && \
-    #wget https://github.com/FreePBX/sng_freepbx_debian_install/raw/master/sng_freepbx_debian_install.sh  -O /tmp/sng_freepbx_debian_install.sh && \
-    #bash /tmp/sng_freepbx_debian_install.sh && \
+    sleep 60 && \
+    cd /usr/src/freepbx && \
+    echo "Installing FreePBX (first attempt)..." && \
+    ./install -n || true && \
+    echo "Re-running FreePBX installer (second attempt)..." && \
+    ./install -n && \
     echo "Updating FreePBX modules..." && \
-    #fwconsole chown && \
-    #fwconsole ma downloadinstall backup && \
-    #fwconsole ma downloadinstall bulkhandler ringgroups timeconditions ivr restapi cel configedit asteriskinfo certman ucp webrtc  && \
-    # fwconsole ma upgradeall && \
+    fwconsole chown && \
+    fwconsole ma downloadinstall backup && \
+    fwconsole ma downloadinstall bulkhandler ringgroups timeconditions ivr restapi cel configedit asteriskinfo certman ucp webrtc  && \
+    fwconsole ma upgradeall && \
     # mysqldump -uroot -d -A -B --skip-add-drop-table > /mysql-freepbx.sql && \
     /etc/init.d/mariadb stop && \
     gpg --refresh-keys --keyserver hkp://keyserver.ubuntu.com:80 && \
@@ -124,7 +124,7 @@ RUN apt-get clean && \
     #mkdir /var/log/asterisk/ && \
     touch /var/log/asterisk/full
 
-ADD startup.sh /
+#ADD startup.sh /
 ADD apply-initial-configs.sh /
 ADD backup.sh /
 ADD delete-old-recordings.sh /
