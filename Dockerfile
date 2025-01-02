@@ -78,7 +78,12 @@ RUN    sed -i -e "s/memory_limit = 128M/memory_limit = 256M/g" /etc/php/8.2/apac
 # FreePBX dependencies
 RUN apt-get update && \
     apt-get install -y pkgconf && \
-    apt-get install -y nodejs yarn cron gettext libicu-dev pkg-config
+    apt-get install -y nodejs yarn cron gettext libicu-dev pkg-config dbus
+
+# Ensure machine-id is generated to prevent PHP shell_exec from returning null
+RUN dbus-uuidgen > /etc/machine-id && \
+    cp /etc/machine-id /var/lib/dbus/machine-id && \
+    chmod 644 /etc/machine-id /var/lib/dbus/machine-id    
 
 # FreePBX
 RUN /etc/init.d/mariadb start && \
@@ -86,16 +91,17 @@ RUN /etc/init.d/mariadb start && \
     echo "Starting Asterisk..." && \
     cp /etc/odbc.ini /usr/src/freepbx/installlib/files/odbc.ini && \
     ./start_asterisk start && \
-    sleep 60 && \
-    cd /usr/src/freepbx && \
     echo "Installing FreePBX (first attempt)..." && \
-    ./install -n || true && \
-    echo "Re-running FreePBX installer (second attempt)..." && \
+    sleep 30 && \
+    cd /usr/src/freepbx && \
     ./install -n && \
     echo "Updating FreePBX modules..." && \
     fwconsole chown && \
+    echo "Installing backup module..." && \
     fwconsole ma downloadinstall backup && \
-    fwconsole ma downloadinstall bulkhandler ringgroups timeconditions ivr restapi cel configedit asteriskinfo certman ucp webrtc  && \
+    echo "Installing other modules..." && \
+    fwconsole ma downloadinstall bulkhandler ringgroups timeconditions ivr restapi cel configedit asteriskinfo certman ucp webrtc && \
+    echo "Running upgrade all..." && \
     fwconsole ma upgradeall && \
     # mysqldump -uroot -d -A -B --skip-add-drop-table > /mysql-freepbx.sql && \
     /etc/init.d/mariadb stop && \
@@ -116,6 +122,8 @@ RUN rm /etc/fail2ban/jail.d/defaults-debian.conf
 
 # Optional tools
 RUN apt-get install --no-install-recommends -y tcpdump tcpflow whois sipsak sngrep iptables
+
+
 
 # Cleanup
 RUN apt-get clean && \
