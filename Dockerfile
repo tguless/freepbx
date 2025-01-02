@@ -30,8 +30,6 @@ RUN echo "Package: libxml2*" > /etc/apt/preferences.d/libxml2 && \
 # PHP 5.6
 RUN apt-get update && \
     apt-get install -y curl wget sox lsb-release && \
-    #curl https://packages.sury.org/php/apt.gpg | apt-key add - && \
-    #echo "deb https://packages.sury.org/php/ bookworm main" > /etc/apt/sources.list.d/deb.sury.org.list && \
     apt-get update && \
     apt-get install -y php8.2 php8.2-curl php8.2-cli php8.2-mysql php-pear php8.2-gd \
                        php8.2-xml php8.2-mbstring && \
@@ -78,11 +76,6 @@ RUN    sed -i -e "s/memory_limit = 128M/memory_limit = 256M/g" /etc/php/8.2/apac
     mkdir -p /var/log/httpd
 
 # FreePBX dependencies
-# RUN #curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - && \
-#    #echo 'deb https://deb.nodesource.com/node_10.x bookworm main' > /etc/apt/sources.list.d/nodesource.list && \
-#    #echo 'deb-src https://deb.nodesource.com/node_10.x bookworm main' >> /etc/apt/sources.list.d/nodesource.list 
-
-
 RUN apt-get update && \
     apt-get install -y pkgconf && \
     apt-get install -y nodejs yarn cron gettext libicu-dev pkg-config
@@ -96,9 +89,9 @@ RUN /etc/init.d/mariadb start && \
     sleep 10 && \
     echo "Installing FreePBX..." && \
     ./install -n && \
-    cd /tmp && \
-    wget https://github.com/FreePBX/sng_freepbx_debian_install/raw/master/sng_freepbx_debian_install.sh  -O /tmp/sng_freepbx_debian_install.sh && \
-    bash /tmp/sng_freepbx_debian_install.sh && \
+    #cd /tmp && \
+    #wget https://github.com/FreePBX/sng_freepbx_debian_install/raw/master/sng_freepbx_debian_install.sh  -O /tmp/sng_freepbx_debian_install.sh && \
+    #bash /tmp/sng_freepbx_debian_install.sh && \
     echo "Updating FreePBX modules..." && \
     #fwconsole chown && \
     #fwconsole ma downloadinstall backup && \
