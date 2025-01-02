@@ -1,4 +1,6 @@
-FROM flaviostutz/asterisk:16.18.0.1
+#FROM ../asterisk
+#FROM flaviostutz/asterisk:16.18.0.1
+FROM mybaseimage:latest
 
 ENV RTP_START '18000'
 ENV RTP_FINISH '18100'
@@ -17,22 +19,22 @@ ENV MARIADB_REMOTE_ROOT_PASSWORD ''
 ENV SIP_NAT_IP ''
 ENV CERTIFICATE_DOMAIN ''
 
-ARG FREEPBX_VERSION=15.0-latest
+ARG FREEPBX_VERSION=17.0-latest-EDGE
 ARG MARIAODBC_VERSION=2.0.19
 
 # Pin libxml2 packages to Debian repositories
 RUN echo "Package: libxml2*" > /etc/apt/preferences.d/libxml2 && \
-    echo "Pin: release o=Debian,n=buster" >> /etc/apt/preferences.d/libxml2 && \
+    echo "Pin: release o=Debian,n=bookworm" >> /etc/apt/preferences.d/libxml2 && \
     echo "Pin-Priority: 501" >> /etc/apt/preferences.d/libxml2
 
 # PHP 5.6
 RUN apt-get update && \
     apt-get install -y curl wget sox lsb-release && \
-    curl https://packages.sury.org/php/apt.gpg | apt-key add - && \
-    echo "deb https://packages.sury.org/php/ buster main" > /etc/apt/sources.list.d/deb.sury.org.list && \
+    #curl https://packages.sury.org/php/apt.gpg | apt-key add - && \
+    #echo "deb https://packages.sury.org/php/ bookworm main" > /etc/apt/sources.list.d/deb.sury.org.list && \
     apt-get update && \
-    apt-get install -y php5.6 php5.6-curl php5.6-cli php5.6-mysql php-pear php5.6-gd \
-                       php5.6-xml php5.6-mbstring && \
+    apt-get install -y php8.2 php8.2-curl php8.2-cli php8.2-mysql php-pear php8.2-gd \
+                       php8.2-xml php8.2-mbstring && \
     apt-get install -y libodbc1 odbcinst odbcinst1debian2 && \
     apt-get update  && \
     apt-get -o Dpkg::Options::="--force-confold" upgrade -y
@@ -53,16 +55,20 @@ RUN rm /etc/mysql/mariadb.conf.d/50-mysqld_safe.cnf && \
 
 # FreePBX
 RUN cd /usr/src && \
-	wget http://mirror.freepbx.org/modules/packages/freepbx/freepbx-$FREEPBX_VERSION.tgz && \
-	tar xfz freepbx-$FREEPBX_VERSION.tgz && \
-	rm -f freepbx-$FREEPBX_VERSION.tgz
+    wget http://mirror.freepbx.org/modules/packages/freepbx/freepbx-$FREEPBX_VERSION.tgz && \
+    tar xfz freepbx-$FREEPBX_VERSION.tgz && \
+    rm -f freepbx-$FREEPBX_VERSION.tgz
 
 ADD odbc.ini /etc/
 ADD odbcinst.ini /etc/
 
 # FreePBX Hacks
-RUN    sed -i -e "s/memory_limit = 128M/memory_limit = 256M/g" /etc/php/5.6/apache2/php.ini && \
-    sed -i 's/\(^upload_max_filesize = \).*/\120M/' /etc/php/5.6/apache2/php.ini && \
+RUN    sed -i -e "s/memory_limit = 128M/memory_limit = 256M/g" /etc/php/8.2/apache2/php.ini && \
+    sed -i 's/\(^upload_max_filesize = \).*/\120M/' /etc/php/8.2/apache2/php.ini && \
+    # Suppress deprecated warnings by adjusting error_reporting
+    sed -i 's/^error_reporting = .*/error_reporting = E_ALL \& ~E_DEPRECATED \& ~E_USER_DEPRECATED/' /etc/php/8.2/apache2/php.ini && \
+    # Suppress deprecated warnings for CLI SAPI
+    sed -i 's/^error_reporting = .*/error_reporting = E_ALL \& ~E_DEPRECATED \& ~E_USER_DEPRECATED/' /etc/php/8.2/cli/php.ini && \
     a2disconf other-vhosts-access-log.conf && \
     a2enmod rewrite && \
     a2enmod headers && \
@@ -72,26 +78,32 @@ RUN    sed -i -e "s/memory_limit = 128M/memory_limit = 256M/g" /etc/php/5.6/apac
     mkdir -p /var/log/httpd
 
 # FreePBX dependencies
-RUN curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - && \
-    echo 'deb https://deb.nodesource.com/node_10.x buster main' > /etc/apt/sources.list.d/nodesource.list && \
-    echo 'deb-src https://deb.nodesource.com/node_10.x buster main' >> /etc/apt/sources.list.d/nodesource.list && \
-    apt-get update && \
+# RUN #curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - && \
+#    #echo 'deb https://deb.nodesource.com/node_10.x bookworm main' > /etc/apt/sources.list.d/nodesource.list && \
+#    #echo 'deb-src https://deb.nodesource.com/node_10.x bookworm main' >> /etc/apt/sources.list.d/nodesource.list 
+
+
+RUN apt-get update && \
     apt-get install -y pkgconf && \
     apt-get install -y nodejs yarn cron gettext libicu-dev pkg-config
 
 # FreePBX
-RUN /etc/init.d/mysql start && \
+RUN /etc/init.d/mariadb start && \
     cd /usr/src/freepbx && \
     echo "Starting Asterisk..." && \
     cp /etc/odbc.ini /usr/src/freepbx/installlib/files/odbc.ini && \
     ./start_asterisk start && \
-    sleep 3 && \
+    sleep 10 && \
     echo "Installing FreePBX..." && \
     ./install -n && \
+    cd /tmp && \
+    wget https://github.com/FreePBX/sng_freepbx_debian_install/raw/master/sng_freepbx_debian_install.sh  -O /tmp/sng_freepbx_debian_install.sh && \
+    bash /tmp/sng_freepbx_debian_install.sh && \
     echo "Updating FreePBX modules..." && \
-    fwconsole chown && \
-    fwconsole ma upgradeall && \
-    fwconsole ma downloadinstall backup bulkhandler ringgroups timeconditions ivr restapi cel configedit asteriskinfo certman ucp webrtc && \
+    #fwconsole chown && \
+    #fwconsole ma downloadinstall backup && \
+    #fwconsole ma downloadinstall bulkhandler ringgroups timeconditions ivr restapi cel configedit asteriskinfo certman ucp webrtc  && \
+    # fwconsole ma upgradeall && \
     # mysqldump -uroot -d -A -B --skip-add-drop-table > /mysql-freepbx.sql && \
     /etc/init.d/mysql stop && \
     gpg --refresh-keys --keyserver hkp://keyserver.ubuntu.com:80 && \
@@ -101,7 +113,7 @@ RUN /etc/init.d/mysql start && \
     gpg --import /var/www/html/admin/libraries/BMO/1588A7366BD35B34.key && \
     chown asterisk:asterisk -R /var/www/html && \
     sed -i 's/www-data/asterisk/g' /etc/apache2/envvars && \
-	rm -rf /usr/src/freepbx*
+    rm -rf /usr/src/freepbx*
 
 # Fail2Ban
 RUN apt-get install -y fail2ban
