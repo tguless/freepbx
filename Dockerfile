@@ -78,7 +78,7 @@ RUN    sed -i -e "s/memory_limit = 128M/memory_limit = 256M/g" /etc/php/8.2/apac
 # FreePBX dependencies
 RUN apt-get update && \
     apt-get install -y pkgconf && \
-    apt-get install -y nodejs yarn cron gettext libicu-dev pkg-config dbus
+    apt-get install -y nodejs yarn cron gettext libicu-dev pkg-config dbus npm
 
 # Ensure machine-id is generated to prevent PHP shell_exec from returning null
 RUN dbus-uuidgen > /etc/machine-id && \
