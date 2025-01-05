@@ -1,0 +1,82 @@
+version: '3.3'
+
+services:
+  base:
+    build:
+      context: ./asterisk
+      dockerfile: Dockerfile
+    image: mybaseimage:latest
+  freepbxbase:
+    build:
+      context: ./freepbxbase
+      dockerfile: Dockerfile
+    image: myfreepbxbaseimage:latest
+  freepbx:
+    container_name: freepbx
+    build: 
+      context: ./freepbx
+      dockerfile: Dockerfile
+    #image: flaviostutz/freepbx
+    depends_on:
+      - base   
+    #  - freepbx-db2
+    ports:
+      - 8080:80
+      - 5060:5060/udp
+      - 5160:5160/udp
+      - 3306:3306
+      - 18000-18100:18000-18100/udp
+    # network_mode: host
+    privileged: true
+    restart: always
+    environment:
+      - MARIADB_REMOTE_ROOT_PASSWORD=admin123
+      - MARIADB_REMOTE_SERVER=freepbx-db2
+      - MARIADB_REMOTE_PORT=3307
+      - ADMIN_PASSWORD=admin123
+      - DISABLE_SIGNATURE_CHECK=true
+      - USE_CHAN_SIP=true
+      - FAIL2BAN_ENABLE=true
+      - FAIL2BAN_FINDTIME=30
+      - FAIL2BAN_MAXRETRY=10
+      - FAIL2BAN_BANTIME=10
+    volumes:
+      - backup:/backup
+      - recordings:/var/spool/asterisk/monitor
+      - certificates:/etc/asterisk/keys
+      - ./freepbx/startup.sh:/startup.sh
+      - ./freepbx/apply-initial-configs.sh:/apply-initial-configs.sh
+      - ./freepbx/backup.sh:/backup.sh
+      - ./freepbx/delete-old-recordings.sh:/delete-old-recordings.sh
+      - ./freepbx/generate-sha1.php:/generate-sha1.php
+      - ./freepbx/index.html:/var/www/html/index.html
+      - ./freepbx/freepbx_chown.conf:/etc/asterisk/freepbx_chown.conf
+      - ./freepbx/odbc.ini:/usr/src/freepbx/installlib/files/odbc.ini
+      - ./freepbx/odbc.ini:/etc/odbc.ini
+      - ./freepbx/odbcinst.ini:/etc/odbcinst.ini
+#  freepbx-db2:
+#    image: mariadb:10.6.10                                                                                                                                    
+#    container_name: freepbx-db2
+#    command: --sql-mode=ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION                                                                 
+#    restart: unless-stopped                                                                                                                                                                                                                                                                            
+#    environment:                                                                                                                                              
+#      - EDITOR          
+#      - MYSQL_PASSWORD=admin123
+#      - MYSQL_ROOT_PASSWORD=admin123
+#      - MYSQL_SERVER=127.0.0.1
+#      - MYSQL_TCP_PORT=3307
+#    volumes:                                                                                                                                                  
+#      - freepbx_db:/var/lib/mysql
+#    ports:
+#      - 127.0.0.1:3307:3307/tcp
+#  adminer:
+#    image: adminer:4.7.6
+#    restart: always
+#    ports:
+#      - "9292:8080"
+
+volumes:
+  backup:
+  recordings:
+  certificates:
+  freepbx_db:    
