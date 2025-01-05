@@ -4,7 +4,7 @@ Here is why this repository exists:
 
 2. Running FreePBX on a MacOS through an ARM64 based Debian VM is not as light weight as running a similar docker container - i.e. memory would have to be dedicated for highest load / worst case scenarios.  
 
-3. This project opens up the opportunity of running on inexpensive AWS [Graviton](https://aws.amazon.com/ec2/graviton/) servers. It on inexpensive arm64 based cloud hosted VMs 
+3. This project opens up the opportunity of running on inexpensive AWS [Graviton](https://aws.amazon.com/ec2/graviton/) servers.
 
 4. This project also opens up the opportunity of running FreePBX on a Raspberry pi.
 
